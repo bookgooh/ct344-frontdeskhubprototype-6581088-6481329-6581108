@@ -1,7 +1,9 @@
 /* Shared building blocks, one function per Figma component. Each returns an HTML string. */
 
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const go = route => route ? ` data-go="${route}"` : '';
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const go = route => route ? ` data-go="${esc(route)}"` : '';
+const dataAttrs = (d = {}) => Object.entries(d).map(([k, v]) => ` data-${k}="${esc(v)}"`).join('');
+const act = (name, d = {}) => ` data-act="${name}"${dataAttrs(d)}`;
 
 const CH = {
   LINE: 'line', WhatsApp: 'whatsapp', 'Booking platform': 'booking', 'Call note': 'call'
@@ -15,9 +17,13 @@ function pill(text, tone = '') {
   return `<span class="pill ${tone}"><span class="dot"></span>${esc(text)}</span>`;
 }
 
+/* opts: go, act, data, cls, icon, disabled, id */
 function btn(label, kind = 'secondary', opts = {}) {
-  const cls = ['btn', kind, opts.cls || ''].join(' ');
-  const attrs = (opts.go ? go(opts.go) : '') + (opts.act ? ` data-act="${opts.act}"` : '') + (kind === 'disabled' ? ' disabled aria-disabled="true"' : '');
+  const disabled = kind === 'disabled' || opts.disabled;
+  const cls = ['btn', disabled ? 'disabled' : kind, opts.cls || ''].join(' ');
+  let attrs = '';
+  if (!disabled) attrs += (opts.go ? go(opts.go) : '') + (opts.act ? act(opts.act, opts.data) : '');
+  else attrs += ' disabled aria-disabled="true"';
   return `<button class="${cls}"${attrs}>${opts.icon ? icon(opts.icon) : ''}${esc(label)}</button>`;
 }
 
@@ -29,35 +35,31 @@ function avatar(initials, sm = false) {
   return `<span class="avatar${sm ? ' sm' : ''}">${esc(initials)}</span>`;
 }
 
-/* Language switch. Pass a route for the other language to follow the Figma link,
-   otherwise the switch just toggles in place. */
-function langSwitch(active, routes = {}) {
-  const b = lang => {
-    const on = active === lang;
-    const attr = on ? '' : (routes[lang] ? go(routes[lang]) : ` data-act="lang"`);
-    return `<button class="${on ? 'on' : ''}"${attr}>${lang}</button>`;
-  };
+/* EN and TH switch. Each button carries the action and its language. */
+function langSwitch(active, actName, data = {}) {
+  const b = lang => `<button class="${active === lang ? 'on' : ''}"${active === lang ? '' : act(actName, Object.assign({ lang }, data))} aria-pressed="${active === lang}">${lang}</button>`;
   return `<span class="lang">${b('EN')}${b('TH')}</span>`;
 }
 
-function toast(text, undoRoute) {
-  return `<div class="toast" role="status">${icon('circle-check')}<span>${esc(text)}</span><button${go(undoRoute)}>Undo</button></div>`;
-}
-
-function inlineNote(text) {
-  return `<div class="inline-note">${icon('circle-alert')}<span>${esc(text)}</span></div>`;
+function inlineNote(text, tone = '') {
+  return `<div class="inline-note ${tone}">${icon('circle-alert')}<span>${esc(text)}</span></div>`;
 }
 
 /* ---------- Sidebar ---------- */
-function sidebar(active, counts = {}) {
-  const c = Object.assign({ inbox: 6, rooms: 1, team: 3 }, counts);
+function sidebar(active) {
+  const c = counts();
+  const open = S.chats.filter(x => !x.done);
   const item = (key, label, ic, route, trailing) => {
     const on = active === key;
-    return `<button class="nav-item${on ? ' active' : ''}"${on ? '' : go(route)}>${icon(ic)}<span>${label}</span><span class="spacer"></span>${trailing || ''}</button>`;
+    return `<button class="nav-item${on ? ' active' : ''}"${go(route)}>${icon(ic)}<span>${label}</span><span class="spacer"></span>${trailing || ''}</button>`;
   };
   const plain = n => `<span class="mono t12 c-mut">${n}</span>`;
   const badge = n => n ? `<span class="count-badge">${n}</span>` : '';
-  const chan = (name, n) => `<div class="channel-row"><span class="dotbox"><span class="dot ch-${CH[name]}"></span></span><span>${name}</span><span class="spacer"></span><span class="mono t12 c-mut">${n}</span></div>`;
+  const chan = name => {
+    const n = open.filter(x => x.ch === name).length;
+    const on = active === 'inbox' && U.channel === name;
+    return `<button class="channel-row${on ? ' on' : ''}"${act('channel', { ch: name })}><span class="dotbox"><span class="dot ch-${CH[name]}"></span></span><span>${name}</span><span class="spacer"></span><span class="mono t12 c-mut">${n}</span></button>`;
+  };
   return `
   <aside class="sidebar">
     <div class="property">
@@ -66,13 +68,13 @@ function sidebar(active, counts = {}) {
     </div>
     <nav class="nav">
       ${item('today', 'Today', 'sun', 'today')}
-      ${item('inbox', 'Inbox', 'inbox', 'inbox/alex', plain(c.inbox))}
+      ${item('inbox', 'Inbox', 'inbox', 'inbox', plain(c.inbox))}
       ${item('rooms', 'Rooms', 'rooms', 'rooms', badge(c.rooms))}
       ${item('team', 'Team', 'users', 'team/schedule', badge(c.team))}
     </nav>
     <div class="channels">
       <div class="label t12 c-mut">Channels</div>
-      ${chan('LINE', 3)}${chan('WhatsApp', 3)}${chan('Booking platform', 3)}${chan('Call note', 1)}
+      ${chan('LINE')}${chan('WhatsApp')}${chan('Booking platform')}${chan('Call note')}
     </div>
     <div class="spacer"></div>
     <div class="signed-in">
@@ -82,6 +84,6 @@ function sidebar(active, counts = {}) {
   </aside>`;
 }
 
-function shell(active, content, counts) {
-  return `<div class="app">${sidebar(active, counts)}<main class="main">${content}</main></div>`;
+function shell(active, content, extra = '') {
+  return `<div class="app">${sidebar(active)}<main class="main">${content}</main>${extra}</div>`;
 }

@@ -1,30 +1,32 @@
 # Front Desk Hub
 
-Desktop prototype for small hotel front desks, built from the Rebuild page of the Front Desk Hub Figma file. ITCT344 Human Computer Interaction term project, MUIC.
+A working desktop app for small hotel front desks, built from the Rebuild page of the Front Desk Hub Figma file. ITCT344 Human Computer Interaction term project, MUIC.
 
-The site is plain HTML, CSS and JavaScript with no build step, so it runs on GitHub Pages as it is.
+It is plain HTML, CSS and JavaScript with no build step, so it runs on GitHub Pages as it is.
 
-## What is inside
+## How it works
 
-All 25 desktop frames from Figma are here as screens, and the buttons follow the same prototype links as in Figma. Seven extra screens fill the buttons that had no link in Figma, so every main action in the prototype now leads somewhere.
+Every screen reads from one set of hotel data, so an action changes everything it touches. Approve a booking and it shows up in the chat, on the room board and on Today. Fix Room 07 and the alert, the sidebar badge and the Today count all clear. Nothing jumps to a pre-drawn screen.
 
-| Area | Screens |
+Your work is saved in the browser, so it is still there after a reload. Most actions show a toast with Undo. To go back to the sample data, open the Go to menu (bottom left corner, or press M) and choose Start over with the sample data.
+
+## What you can do
+
+| Area | Actions |
 |---|---|
-| Today | Daily overview with the Needs you list, housekeeping and arrivals |
-| Inbox | Alex Morgan draft reply (writing, ready, editing, sent), Kenji Sato draft (ready, editing, sent), Khun Pim draft in Thai and English (ready, editing) then offers sent, Mia Laurent booking request (review, suggest a room, suggestion sent, decline, decline sent), Noor Haddad request (all clear, approved, suggest a room, suggestion sent, decline, decline sent) |
-| Rooms | Room board, Room 07 booked twice, overlap fixed |
-| Team | Schedule, add shift on 19 Nov, shift added, rooms by floor, rooms by floor fixed, tasks |
+| Today | See what needs you, worked out live from the inbox, rooms and team. Check guests in (only when their room is ready). Change a room's cleaning status by clicking it. |
+| Inbox | Filter by Open, Requests, Drafts and Done, by channel in the sidebar, or search by name. Approve, edit or stop AI drafts, switch them between EN and TH, and choose which offer cards go with them. Type your own reply and press Enter. Send an offer card from the Offer button. Mark a chat done and reopen it. Add notes to call notes and move Khun Somchai's dinner. |
+| Booking requests | Four checks run on the live data. Blocking checks stop approval. Approve, suggest another free room that fits, or decline with a reason. Messages can be edited before sending. A suggested room is held on the board until the guest says yes. Add a cleaning task straight from the check. |
+| Rooms | Two week board with previous and next week. Overlaps are found automatically and the fix suggests free rooms of the same type, then a free upgrade. Click any booking to see it, check the guest in or move it to another free room. |
+| Team | Click any schedule cell to add or change a shift, with checks for training and times. Reassign cleaners by clicking the cleaner, fix problems one by one or all at once, or assign every room by floor. Add, tick and delete tasks. |
 
 The screen is drawn at 1920 by 1080 and scales to fit any 16:9 display, so it looks the same on a laptop, a projector or a full HD monitor.
 
 ## Presenting it
 
-Start on the Today screen and click through like a front desk manager would. A few extra controls help during a demo.
+Start on Today and work through it like a front desk manager would. A good order is Noor's request, Mia's request, the Room 07 overlap, the three drafts, the desk gap on 19 Nov and the cleaning problems. Every item you finish leaves the Needs you list.
 
-- The right and left arrow keys step through every screen in order.
-- Press M, or hover the bottom left corner, to open a list of all screens and jump to any of them.
-- The search box in the inbox filters chats by guest name.
-- Room and person options, reason chips, offer chips and task checkboxes can be clicked.
+Press M, or hover the bottom left corner, to jump to any page or chat. Press Esc to close a side panel. Start over with the sample data before each run so everyone sees the same starting point.
 
 ## Publish on GitHub Pages
 
@@ -37,7 +39,7 @@ Start on the Today screen and click through like a front desk manager would. A f
 
 ## Run it on your computer
 
-Open the folder in VS Code and start Live Server. Everything works offline because the fonts are stored in the `fonts` folder. Double clicking `index.html` also opens the prototype, though some browsers then fall back to a system font.
+Open the folder in VS Code and start Live Server. Everything works offline because the fonts are stored in the `fonts` folder. Double clicking `index.html` also opens the app, though some browsers then fall back to a system font.
 
 ## Files
 
@@ -46,10 +48,14 @@ index.html        page shell
 css/styles.css    design tokens and all component styles
 css/fonts.css     font faces for IBM Plex Sans Thai and IBM Plex Mono
 js/icons.js       icon set exported from Figma
+js/data.js        sample hotel data (rooms, bookings, chats, staff, tasks)
+js/logic.js       rules worked out from the data (overlaps, checks, counts, messages)
 js/ui.js          shared parts such as the sidebar, buttons, pills and key tags
-js/screens.js     every screen and the list of routes
-js/main.js        routing, 16:9 scaling and small interactions
+js/screens.js     Today, Inbox, Rooms and Team screens
+js/main.js        routing, saving, undo, 16:9 scaling and every action
 fonts/            IBM Plex fonts (SIL Open Font License)
 ```
 
-Guest names, rooms, prices and dates are sample data written for the prototype.
+The functionality tests sit in the `Functionality tests` folder next to this one. Run `python run_tests.py ../front-desk-hub-prototype` there to check every flow in Chromium.
+
+Guest names, rooms, prices and dates are sample data written for the project.
